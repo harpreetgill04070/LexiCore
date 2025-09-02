@@ -1,6 +1,3 @@
-
-
-
 import { useState, useEffect } from "react";
 import { FiFileText } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
@@ -20,14 +17,17 @@ function Assistant() {
     const uploadedFile = event.target.files[0];
     if (!uploadedFile) return;
 
-    setSources((prev) => [...prev, { id: Date.now(), name: uploadedFile.name }]);
+    setSources((prev) => [
+      ...prev,
+      { id: Date.now(), name: uploadedFile.name },
+    ]);
 
     const formData = new FormData();
     formData.append("file", uploadedFile);
 
     try {
       setLoadingUpload(true);
-      const res = await fetch("http://localhost:8000/api/upload", {
+      const res = await fetch("https://lexicore.onrender.com/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -57,7 +57,7 @@ function Assistant() {
     setLoadingAsk(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/ask", {
+      const res = await fetch("https://lexicore.onrender.com/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: query }),
@@ -79,9 +79,7 @@ function Assistant() {
       const interval = setInterval(() => {
         setResponses((prev) =>
           prev.map((r) =>
-            r.id === newId
-              ? { ...r, text: r.fullText.slice(0, i + 1) }
-              : r
+            r.id === newId ? { ...r, text: r.fullText.slice(0, i + 1) } : r
           )
         );
         i++;
@@ -220,7 +218,9 @@ function Assistant() {
           {/* Sources */}
           {sources.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Sources</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Sources
+              </h3>
               <div className="space-y-3">
                 {sources.map((source) => (
                   <div
