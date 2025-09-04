@@ -248,14 +248,13 @@
 
 
 // ------------------------------------------------------
-
 import { useState, useEffect } from "react";
 import { FiFileText } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "framer-motion";
 
-const API_BASE =  "http://localhost:8000";
+const API_BASE = "http://localhost:8000";
 
 function Assistant() {
   const [activeTab, setActiveTab] = useState("assist");
@@ -277,15 +276,13 @@ function Assistant() {
       .catch(() => {});
   }, []);
 
-  // ✅ Multi-file, multi-type upload
-  const handleUpload = async (event) => {
-    const files = event.target.files;
+  // ✅ Multi-file upload
+  const uploadFiles = async (files) => {
     if (!files || files.length === 0) return;
-
     const formData = new FormData();
     Array.from(files).forEach((f) => formData.append("files", f));
 
-    // optimistic UI for file names
+    // optimistic UI for file list
     setSources((prev) => [
       ...prev,
       ...Array.from(files).map((f) => ({ id: Date.now() + f.name, name: f.name })),
@@ -300,11 +297,15 @@ function Assistant() {
       setResponses((prev) => [...prev, { id: Date.now(), text: "⚠️ Error uploading file(s)." }]);
     } finally {
       setLoadingUpload(false);
-      event.target.value = ""; // reset input
     }
   };
 
-  // ✅ Ask with task + (optional) promptKey/customPrompt
+  const handleUpload = (event) => {
+    uploadFiles(event.target.files);
+    event.target.value = ""; // reset input
+  };
+
+  // ✅ Ask with task + prompt
   const handleAsk = async () => {
     if (sources.length === 0) {
       setResponses((prev) => [...prev, { id: Date.now(), text: "⚠️ Please upload a document first!" }]);
@@ -405,7 +406,6 @@ function Assistant() {
                 <option value="draft_email">Draft Email</option>
               </select>
             </div>
-
             {/* Prompt picker */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Prompt (library)</label>
@@ -426,7 +426,6 @@ function Assistant() {
                 )}
               </select>
             </div>
-
             {/* Custom prompt */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -460,7 +459,6 @@ function Assistant() {
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{res.text}</ReactMarkdown>
               </div>
 
-              {/* Citations */}
               {res.citations && res.citations.length > 0 && (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
                   <div className="font-medium mb-2">Sources</div>
@@ -476,7 +474,6 @@ function Assistant() {
                 </div>
               )}
 
-              {/* Query box after last */}
               {idx === responses.length - 1 && (
                 <div className="mt-4 p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
                   <textarea
@@ -499,7 +496,7 @@ function Assistant() {
             </motion.div>
           ))}
 
-          {/* First Query */}
+          {/* First Query (if no responses yet) */}
           {responses.length === 0 && (
             <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
               <textarea
@@ -520,28 +517,47 @@ function Assistant() {
             </div>
           )}
 
-          {/* Upload */}
+          {/* Upload with Drag & Drop */}
           <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
             <label className="block mb-2 text-sm font-medium text-gray-700">Upload files</label>
-            <div className="flex items-center space-x-3">
+            <div
+              onDrop={(e) => {
+                e.preventDefault();
+                uploadFiles(e.dataTransfer.files);
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              className="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition"
+            >
+              <p className="text-sm">Drag & drop files here, or click to browse</p>
               <input
                 type="file"
                 multiple
                 accept=".pdf,.docx,.xlsx,.zip"
                 onChange={handleUpload}
                 disabled={loadingUpload}
+                className="hidden"
+                id="fileInput"
               />
-              {loadingUpload && <span className="text-sm text-gray-500">Uploading…</span>}
+              <label
+                htmlFor="fileInput"
+                className="mt-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 cursor-pointer"
+              >
+                Choose Files
+              </label>
+              {loadingUpload && <span className="mt-2 text-sm text-gray-500">Uploading…</span>}
             </div>
           </div>
 
-          {/* Sources (uploaded list) */}
+          {/* Uploaded sources list */}
           {sources.length > 0 && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-3">Uploaded</h3>
               <div className="space-y-3">
                 {sources.map((source) => (
-                  <div key={source.id} className="flex items-center p-3 border border-gray-200 rounded-md bg-white shadow-sm">
+                  <div
+                    key={source.id}
+                    className="flex items-center p-3 border border-gray-200 rounded-md bg-white shadow-sm"
+                  >
                     <FiFileText className="text-gray-400 mr-3 flex-shrink-0" />
                     <span className="text-sm text-gray-900 font-medium">{source.name}</span>
                   </div>
@@ -549,7 +565,6 @@ function Assistant() {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
