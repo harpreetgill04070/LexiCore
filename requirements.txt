@@ -90,3 +90,8 @@ python-dotenv
 fastapi==0.115.6
 uvicorn==0.34.0
 python-multipart==0.0.9
+pdfplumber
+python-docx
+openpyxl
+pandas
+tiktoken
