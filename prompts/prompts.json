@@ -1,1 +1,11 @@
-{"shared": {}, "private": {}}
+{
+  "shared": {
+    "qa_default": "Answer the question clearly using the uploaded documents.",
+    "summarize_brief": "Summarize the document in less than 200 words, focusing on key points.",
+    "identify_risks_legal": "Read the document and highlight potential legal risks and compliance issues.",
+    "draft_email_formal": "Draft a formal email based on the query and uploaded documents."
+  },
+  "private": {
+    "my_custom_style": "Respond in a concise, bullet-point style with citations."
+  }
+}
