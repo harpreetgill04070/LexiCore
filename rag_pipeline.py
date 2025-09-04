@@ -108,6 +108,12 @@
 # ---------------------------------------------------------------------------------------
 
 
+
+
+
+
+
+
 # rag_pipeline.py
 import json
 import os
@@ -127,7 +133,6 @@ def _load_prompts() -> Dict[str, Any]:
         return json.load(f)
 
 def _resolve_prompt(task: str, prompt_key: Optional[str], custom_prompt: Optional[str]) -> str:
-    # precedence: custom > prompt_key > sensible default per task
     if custom_prompt:
         return custom_prompt
 
@@ -177,7 +182,6 @@ def _extract_citations(docs: List[Document]) -> List[Dict[str, Any]]:
                 "filetype": d.metadata.get("filetype"),
             }
         )
-    # de-duplicate
     uniq = []
     seen = set()
     for c in cites:
@@ -189,11 +193,12 @@ def _extract_citations(docs: List[Document]) -> List[Dict[str, Any]]:
 
 def answer_query(
     question: str,
-    task: str = "qa",  # one of: qa, summarize, identify_risks, draft_email
-    file: Optional[str] = None,  # restrict retrieval to a single file (filename)
+    task: str = "qa",
+    file: Optional[str] = None,
     top_k: int = 6,
     prompt_key: Optional[str] = None,
     custom_prompt: Optional[str] = None,
+    model: str = "gpt-4o-mini",  # ✅ now configurable
 ) -> Dict[str, Any]:
     """
     Returns: {"answer": str, "sources": [{"source": "...", "page": 3}, ...]}
@@ -203,7 +208,7 @@ def answer_query(
     docs = retriever.get_relevant_documents(question)
     context = _format_context(docs)
 
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+    llm = ChatOpenAI(model=model, temperature=0.2)
     prompt = _make_prompt(template)
     chain = prompt | llm | StrOutputParser()
     answer = chain.invoke({"question": question, "context": context})

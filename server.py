@@ -54,11 +54,12 @@
 
 
 
+
 # server.py
 import os
 import json
 from typing import List, Optional
-from fastapi import FastAPI, UploadFile, File, Query
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from rag_pipeline import answer_query
@@ -68,7 +69,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # ⚠️ tighten in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,7 +78,7 @@ app.add_middleware(
 uploads_dir = "pdfs"
 os.makedirs(uploads_dir, exist_ok=True)
 
-# ---------- Upload API (multi-file, multi-type) ----------
+# ---------- Upload API ----------
 @app.post("/api/upload")
 async def upload(files: List[UploadFile] = File(...)):
     processed = []
@@ -86,18 +87,15 @@ async def upload(files: List[UploadFile] = File(...)):
             path = os.path.join(uploads_dir, uf.filename)
             with open(path, "wb") as f:
                 f.write(await uf.read())
-
-            # load -> chunk -> upsert
             docs = load_any(path)
             chunks = create_chunks(docs)
             store_in_pinecone(chunks)
             processed.append(uf.filename)
-
         return {"status": "success", "message": f"Indexed: {processed}", "files": processed}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-# ---------- Files API (list/delete) ----------
+# ---------- Files API ----------
 @app.get("/api/files")
 async def list_files():
     try:
@@ -117,7 +115,7 @@ async def delete_file(filename: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-# ---------- Prompts API (simple shared library) ----------
+# ---------- Prompts API ----------
 PROMPTS_PATH = os.path.join("prompts", "prompts.json")
 os.makedirs("prompts", exist_ok=True)
 if not os.path.exists(PROMPTS_PATH):
@@ -135,7 +133,7 @@ def _write_prompts(data):
 class PromptCreate(BaseModel):
     key: str
     template: str
-    scope: str = "shared"  # or "private" (no auth wired yet)
+    scope: str = "shared"
 
 @app.get("/api/prompts")
 async def get_prompts():
@@ -158,14 +156,15 @@ async def delete_prompt(scope: str, key: str):
         return {"status": "success"}
     return {"status": "error", "message": "Not found"}
 
-# ---------- Ask API (tasks + optional file restriction + citations) ----------
+# ---------- Ask API ----------
 class AskRequest(BaseModel):
     question: str
-    task: str = "qa"  # "qa" | "summarize" | "identify_risks" | "draft_email"
+    task: str = "qa"
     file: Optional[str] = None
     top_k: int = 6
     promptKey: Optional[str] = None
     customPrompt: Optional[str] = None
+    model: str = "gpt-4o-mini"  # ✅ new field
 
 @app.post("/api/ask")
 async def ask(req: AskRequest):
@@ -177,8 +176,8 @@ async def ask(req: AskRequest):
             top_k=req.top_k,
             prompt_key=req.promptKey,
             custom_prompt=req.customPrompt,
+            model=req.model,
         )
         return result
     except Exception as e:
         return {"status": "error", "message": str(e)}
-

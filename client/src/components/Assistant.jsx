@@ -248,13 +248,18 @@
 
 
 // ------------------------------------------------------
+
+
+
+
+
 import { useState, useEffect } from "react";
 import { FiFileText } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "framer-motion";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://lexicore.onrender.com";
 
 function Assistant() {
   const [activeTab, setActiveTab] = useState("assist");
@@ -268,6 +273,7 @@ function Assistant() {
   const [prompts, setPrompts] = useState({ shared: {}, private: {} });
   const [promptKey, setPromptKey] = useState("qa_default");
   const [customPrompt, setCustomPrompt] = useState("");
+  const [model, setModel] = useState("gpt-4o-mini"); // ✅ new: model picker
 
   useEffect(() => {
     fetch(`${API_BASE}/api/prompts`)
@@ -305,7 +311,7 @@ function Assistant() {
     event.target.value = ""; // reset input
   };
 
-  // ✅ Ask with task + prompt
+  // ✅ Ask with task + prompt + model
   const handleAsk = async () => {
     if (sources.length === 0) {
       setResponses((prev) => [...prev, { id: Date.now(), text: "⚠️ Please upload a document first!" }]);
@@ -319,6 +325,7 @@ function Assistant() {
         question: query,
         task,
         top_k: 6,
+        model, // ✅ new field
         promptKey: customPrompt.trim() ? null : promptKey,
         customPrompt: customPrompt.trim() || null,
       };
@@ -391,7 +398,7 @@ function Assistant() {
         <div className="max-w-3xl mx-auto space-y-6">
 
           {/* Controls */}
-          <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm grid grid-cols-1 md:grid-cols-4 gap-3">
             {/* Task */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Task</label>
@@ -406,6 +413,21 @@ function Assistant() {
                 <option value="draft_email">Draft Email</option>
               </select>
             </div>
+
+            {/* Model */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+              >
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              </select>
+            </div>
+
             {/* Prompt picker */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Prompt (library)</label>
@@ -426,6 +448,7 @@ function Assistant() {
                 )}
               </select>
             </div>
+
             {/* Custom prompt */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
