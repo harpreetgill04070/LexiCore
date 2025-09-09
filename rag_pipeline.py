@@ -109,12 +109,6 @@
 
 
 
-
-
-
-
-
-# rag_pipeline.py
 import json
 import os
 from typing import Optional, Dict, Any, List
@@ -152,7 +146,7 @@ def _make_prompt(template: str) -> ChatPromptTemplate:
     system = (
         "{template}\n\n"
         "Rules:\n"
-        "- Cite with (Source: <filename>[, p.<page>]) using the provided context only.\n"
+
         "- If context is insufficient, say so.\n"
         "- Keep answers clear and structured for lawyers.\n"
     )
@@ -215,3 +209,8 @@ def answer_query(
 
     sources = _extract_citations(docs)
     return {"answer": answer, "sources": sources}
+
+
+
+
+
